@@ -199,53 +199,129 @@ customerRoute.post("/changepassword", async (req, res) => {
   }
 });
 
+// // ---------------- Update Customer -------------------
+// customerRoute.put("/update/:cid", upload.single("CPicName"), async (req, res) => {
+//   console.log("update fun called");
+//   try {
+//     const { cid } = req.params;
+//     const { CEmail, CUserId } = req.body;
+//     const customer = await Customer.findOne({ Cid: cid });
+//     if (!customer) return res.status(404).json({ message: "Customer not found" });
+
+//     const emailExists = await Customer.findOne({ CEmail, Cid: { $ne: cid } });
+//     if (emailExists) return res.status(400).json({ message: "Email already exists" });
+
+//     const userIdExists = await Customer.findOne({ CUserId, Cid: { $ne: cid } });
+//     if (userIdExists) return res.status(400).json({ message: "User ID already exists" });
+
+//     // update fields
+//     customer.CustomerName = req.body.CustomerName;
+//     customer.CAddress = req.body.CAddress;
+//     customer.CContact = req.body.CContact;
+//     customer.CEmail = CEmail;
+//     customer.CUserId = CUserId;
+//     customer.StId = req.body.StId;
+//     customer.CtId = req.body.CtId;
+
+//     // if image uploaded, replace on cloudinary
+//     if (req.file) {
+//       const stream = cloudinary.uploader.upload_stream(
+//         { folder: "customer_images" },
+//         async (error, result) => {
+//           if (error) return res.status(500).json({ message: "Cloudinary upload failed" });
+//           customer.CPicName = result.secure_url;
+//           await customer.save();
+//           res.json({ message: "Profile updated successfully", customer });
+//         }
+//       );
+//       stream.end(req.file.buffer);
+//     } else {
+//       await customer.save();
+//       res.json({ message: "Profile updated successfully", customer });
+//     }
+//   } catch (err) {
+//     console.error("Error updating customer:", err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
+
 // ---------------- Update Customer -------------------
-customerRoute.put("/update/:cid", upload.single("CPicName"), async (req, res) => {
-  console.log("update fun called");
-  try {
-    const { cid } = req.params;
-    const { CEmail, CUserId } = req.body;
-    const customer = await Customer.findOne({ Cid: cid });
-    if (!customer) return res.status(404).json({ message: "Customer not found" });
+customerRoute.put(
+  "/update/:cid",
+  upload.single("CPicName"),
+  async (req, res) => {
+    console.log("Update Customer API Called");
 
-    const emailExists = await Customer.findOne({ CEmail, Cid: { $ne: cid } });
-    if (emailExists) return res.status(400).json({ message: "Email already exists" });
+    try {
+      const { cid } = req.params;
+      const { CEmail, CUserId } = req.body;
 
-    const userIdExists = await Customer.findOne({ CUserId, Cid: { $ne: cid } });
-    if (userIdExists) return res.status(400).json({ message: "User ID already exists" });
+      const customer = await Customer.findOne({ Cid: cid });
 
-    // update fields
-    customer.CustomerName = req.body.CustomerName;
-    customer.CAddress = req.body.CAddress;
-    customer.CContact = req.body.CContact;
-    customer.CEmail = CEmail;
-    customer.CUserId = CUserId;
-    customer.StId = req.body.StId;
-    customer.CtId = req.body.CtId;
+      if (!customer) {
+        return res.status(404).json({
+          success: false,
+          message: "Customer not found",
+        });
+      }
 
-    // if image uploaded, replace on cloudinary
-    if (req.file) {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: "customer_images" },
-        async (error, result) => {
-          if (error) return res.status(500).json({ message: "Cloudinary upload failed" });
-          customer.CPicName = result.secure_url;
-          await customer.save();
-          res.json({ message: "Profile updated successfully", customer });
-        }
-      );
-      stream.end(req.file.buffer);
-    } else {
+      // Check duplicate email
+      const emailExists = await Customer.findOne({
+        CEmail,
+        Cid: { $ne: cid },
+      });
+
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists",
+        });
+      }
+
+      // Check duplicate userid
+      const userIdExists = await Customer.findOne({
+        CUserId,
+        Cid: { $ne: cid },
+      });
+
+      if (userIdExists) {
+        return res.status(400).json({
+          success: false,
+          message: "User ID already exists",
+        });
+      }
+
+      // Update fields
+      customer.CustomerName = req.body.CustomerName;
+      customer.CUserId = req.body.CUserId;
+      customer.StId = req.body.StId;
+      customer.CtId = req.body.CtId;
+      customer.CAddress = req.body.CAddress;
+      customer.CContact = req.body.CContact;
+      customer.CEmail = req.body.CEmail;
+
+      // Cloudinary image uploaded automatically
+      if (req.file) {
+        customer.CPicName = req.file.path;
+      }
+
       await customer.save();
-      res.json({ message: "Profile updated successfully", customer });
+
+      res.status(200).json({
+        success: true,
+        message: "Profile updated successfully",
+        customer,
+      });
+    } catch (err) {
+      console.error("Customer Update Error:", err);
+
+      res.status(500).json({
+        success: false,
+        message: err.message || "Server Error",
+      });
     }
-  } catch (err) {
-    console.error("Error updating customer:", err);
-    res.status(500).json({ message: "Server error" });
   }
-});
-
-
+);
 module.exports = customerRoute;
 
 // // =========================

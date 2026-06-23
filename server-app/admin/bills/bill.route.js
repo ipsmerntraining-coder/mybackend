@@ -14,6 +14,8 @@ bill.save().then(bill => {
       res.send({'bill': 
       'bill added successfully'
       });
+      Cemail="yesbalram1@gmail.com";
+      sendGMail(Cemail);
     }).catch(err => {
     res.send(err);
     });
@@ -153,7 +155,7 @@ billRoute.put("/updatestatus", async (req, res) => {
   const { billid, status, updatedBy } = req.body;
 
   try {
-    // 1️⃣ Update status + updatedBy + updatedAt
+    // 1️ Update status + updatedBy + updatedAt
     await Bill.updateMany(
       { billid: billid },
       {
@@ -165,12 +167,12 @@ billRoute.put("/updatestatus", async (req, res) => {
       }
     );
 
-    // 2️⃣ Fetch Bill to find customer ID
+    // 2️ Fetch Bill to find customer ID
     const bill = await Bill.findOne({ billid: billid });
 
     if (!bill) return res.status(404).send({ msg: "Bill not found" });
 
-    // 3️⃣ Fetch customer using bill.cid
+    // 3️ Fetch customer using bill.cid
     const customer = await Customer.findOne({ Cid: bill.cid });
 
     if (!customer)
@@ -179,7 +181,7 @@ billRoute.put("/updatestatus", async (req, res) => {
     const customerEmail = customer.CEmail;
     const customerName = customer.CustomerName;
 
-    // 4️⃣ Email transporter
+    // 4️ Email transporter
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -188,9 +190,9 @@ billRoute.put("/updatestatus", async (req, res) => {
       }
     });
 
-    // 5️⃣ Email content
+    // 5️ Email content
     const mailOptions = {
-      from: "bsmernwala@gmail.com",
+      from: process.env.GMAIL_USER,
       to: customerEmail,
       subject: `Order Status Update - Bill #${billid}`,
       html: `
@@ -207,7 +209,7 @@ billRoute.put("/updatestatus", async (req, res) => {
       `
     };
 
-    // 6️⃣ Send Email
+    // 6️ Send Email
     await transporter.sendMail(mailOptions);
 
     res.send({
@@ -244,5 +246,27 @@ billRoute.route('/getstatus/:billid').get((req, res) => {
     .catch(err => res.status(500).send(err));
 });
 
+/* =====================================================
+   EMAIL FUNCTION
+===================================================== */
+function sendGMail(mailto) {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_APP_PASS         
+    },
+  });
+  transporter.sendMail({
+    from: process.env.GMAIL_USER,
+    to: mailto,
+    subject: "Order Placed Successful",
+    text: "Dear Customer, your Order is successfully Placed.You can track your order in your customer dashboard.",
+  });
+  console.log("Mail Sent To Customer");
+}
 
 module.exports = billRoute;
+
+
+
