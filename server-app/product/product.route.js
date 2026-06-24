@@ -5,7 +5,7 @@ const Product = require("./product.model");
 const cloudinary = require("cloudinary").v2;
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
-//const { createInventoryForNewProduct } = require("./inventory.route");
+const { createInventoryForNewProduct } = require("./inventory.route");
 
 require("dotenv").config();
 
@@ -33,12 +33,12 @@ productRoute.post("/saveproduct", async (req, res) => {
     const product = new Product(req.body);
     await product.save();
 
-    // await createInventoryForNewProduct(
-    //   product.pid,
-    //   product.vid,
-    //   0,
-    //   { updatedBy: product.vid }
-    // );
+    await createInventoryForNewProduct(
+      product.pid,
+      product.vid,
+      0,
+      { updatedBy: product.vid }
+    );
 
     res.json({ message: "Product added", product });
   } catch (err) {
